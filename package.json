@@ -1,12 +1,12 @@
 {
     "name": "cloudcms-virtual-server",
-    "version": "0.4.3",
+    "version": "0.4.4",
     "private": true,
     "scripts": {
         "start": "node app"
     },
     "dependencies": {
-        "cloudcms-server": "0.8.351",
+        "cloudcms-server": "0.8.365",
         "async": "1.5.2"
     }
 }
