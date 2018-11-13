@@ -1,39 +1,9 @@
+process.env.PORT=5000;
+
 var server = require("cloudcms-server/server");
 
 var frameworkControllers = require("cloudcms-server/framework/controllers");
 var frameworkSockets = require("cloudcms-server/framework/sockets");
-
-// use the special "net-production" configuration
-if (!process.env.CLOUDCMS_STORE_CONFIGURATION) {
-    //process.env.CLOUDCMS_STORE_CONFIGURATION = "net-production";
-    
-    // TODO: for now, fall back to net-development since we rely on the /hosts directory
-    process.env.CLOUDCMS_STORE_CONFIGURATION = "net-development";
-}
-
-if (!process.env.CLOUDCMS_NET_GITHUB_USERNAME) {
-    console.log("Missing env CLOUDCMS_NET_GITHUB_USERNAME");
-}
-
-if (!process.env.CLOUDCMS_NET_GITHUB_PASSWORD) {
-    console.log("Missing env CLOUDCMS_NET_GITHUB_PASSWORD");
-}
-
-if (!process.env.CLOUDCMS_VIRTUAL_DRIVER_CLIENT_KEY) {
-    throw new Error("Missing env CLOUDCMS_VIRTUAL_DRIVER_CLIENT_KEY");
-}
-
-if (!process.env.CLOUDCMS_VIRTUAL_DRIVER_CLIENT_SECRET) {
-    throw new Error("Missing env CLOUDCMS_VIRTUAL_DRIVER_CLIENT_SECRET");
-}
-
-if (!process.env.CLOUDCMS_VIRTUAL_DRIVER_AUTHGRANT_KEY) {
-    throw new Error("Missing env CLOUDCMS_VIRTUAL_DRIVER_AUTHGRANT_KEY");
-}
-
-if (!process.env.CLOUDCMS_VIRTUAL_DRIVER_AUTHGRANT_SECRET) {
-    throw new Error("Missing env CLOUDCMS_VIRTUAL_DRIVER_AUTHGRANT_SECRET");
-}
 
 if (process.env.CLOUDCMS_NOTIFICATIONS_ENABLED) {
 
@@ -116,6 +86,7 @@ server.report(function(callback) {
     console.log("Temp Directory: " + process.env.CLOUDCMS_TEMPDIR_PATH);
     console.log("LaunchPad Mode: " + process.env.CLOUDCMS_LAUNCHPAD_SETUP);
     console.log("Max Files Detected: " + process.env.CLOUDCMS_MAX_FILES);
+    console.log("Virtual Host Enabled: " + config.virtualHost.enabled);
     
     console.log("");        
     console.log("Web Server: http://localhost:" + process.env.PORT);
@@ -130,14 +101,10 @@ server.report(function(callback) {
 var config = {
     "setup": "single",
     "virtualHost": {
-        "enabled": true
+        "enabled": false
     },
     "virtualDriver": {
-        "enabled": true,
-        "clientKey": process.env.CLOUDCMS_VIRTUAL_DRIVER_CLIENT_KEY,
-        "clientSecret": process.env.CLOUDCMS_VIRTUAL_DRIVER_CLIENT_SECRET,
-        "username": process.env.CLOUDCMS_VIRTUAL_DRIVER_AUTHGRANT_KEY,
-        "password": process.env.CLOUDCMS_VIRTUAL_DRIVER_AUTHGRANT_SECRET
+        "enabled": false
     },
     "wcm": {
         "enabled": true,
@@ -149,10 +116,15 @@ var config = {
     "autoRefresh": {
         "log": true
     },
-    "insight": {
-        "enabled": true
-    },
-    "notifications": {
+    "welcome": {
+        "enabled": true,
+        "file": "index.html"
+    }
+};
+
+if (process.env.CLOUDCMS_NOTIFICATIONS_ENABLED)
+{
+    config.notifications = {
         "enabled": process.env.CLOUDCMS_NOTIFICATIONS_ENABLED,
         "type": "sqs",
         "configuration": {
@@ -160,8 +132,36 @@ var config = {
             "accessKey": process.env.CLOUDCMS_NOTIFICATIONS_SQS_ACCESS_KEY,
             "secretKey": process.env.CLOUDCMS_NOTIFICATIONS_SQS_SECRET_KEY,
             "region": process.env.CLOUDCMS_NOTIFICATIONS_SQS_REGION
-        }
+        }        
+    };
+}
+
+// configure virtual driver
+if (process.env.CLOUDCMS_VIRTUAL_DRIVER_CLIENT_KEY && 
+    process.env.CLOUDCMS_VIRTUAL_DRIVER_CLIENT_SECRET && 
+    process.env.CLOUDCMS_VIRTUAL_DRIVER_AUTHGRANT_KEY &&
+    process.env.CLOUDCMS_VIRTUAL_DRIVER_AUTHGRANT_SECRET)
+{
+    config.virtualHost.enabled = true;
+    
+    config.virtualDriver.enabled = true;
+    config.virtualDriver.clientKey = process.env.CLOUDCMS_VIRTUAL_DRIVER_CLIENT_KEY;
+    config.virtualDriver.clientSecret = process.env.CLOUDCMS_VIRTUAL_DRIVER_CLIENT_SECRET;
+    config.virtualDriver.username = process.env.CLOUDCMS_VIRTUAL_DRIVER_AUTHGRANT_KEY;
+    config.virtualDriver.password = process.env.CLOUDCMS_VIRTUAL_DRIVER_AUTHGRANT_SECRET;
+}
+
+// auto-configure stores
+if (!process.env.CLOUDCMS_STORE_CONFIGURATION) {
+
+    if (config.virtualHost.enabled)
+    {
+        process.env.CLOUDCMS_STORE_CONFIGURATION = "net-development";        
     }
-};
+    else
+    {
+        process.env.CLOUDCMS_STORE_CONFIGURATION = "default";        
+    }
+}
 
 server.start(config);
