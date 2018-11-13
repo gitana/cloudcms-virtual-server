@@ -1,5 +1,3 @@
-process.env.PORT=5000;
-
 var server = require("cloudcms-server/server");
 
 var frameworkControllers = require("cloudcms-server/framework/controllers");
