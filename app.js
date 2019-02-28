@@ -150,16 +150,31 @@ if (process.env.CLOUDCMS_VIRTUAL_DRIVER_CLIENT_KEY &&
 }
 
 // auto-configure stores
-if (!process.env.CLOUDCMS_STORE_CONFIGURATION) {
-
+if (!process.env.CLOUDCMS_STORE_CONFIGURATION)
+{
     if (config.virtualHost.enabled)
     {
-        process.env.CLOUDCMS_STORE_CONFIGURATION = "net-development";        
+        process.env.CLOUDCMS_STORE_CONFIGURATION = "net-development";
     }
     else
     {
-        process.env.CLOUDCMS_STORE_CONFIGURATION = "default";        
+        process.env.CLOUDCMS_STORE_CONFIGURATION = "default";
     }
 }
 
-server.start(config);
+// support for custom.js file
+var ignitionFunction = function(server, config, callback)
+{
+    callback();
+};
+
+var fs = require("fs");
+var exists = fs.existsSync("custom.js");
+if (exists)
+{
+    ignitionFunction = require("./custom.js").init;
+}
+
+ignitionFunction(server, config, function() {
+    server.start(config);
+});
